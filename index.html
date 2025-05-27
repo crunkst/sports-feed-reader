@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sports News Feed Reader</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+    h1 { text-align: center; padding: 1rem; background: #1e3a8a; color: white; }
+    .container { padding: 1rem; max-width: 1200px; margin: auto; }
+    .section { background: white; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .section h2 { margin-top: 0; }
+    .feed-item { margin-bottom: 0.5rem; }
+    .feed-item a { color: #1e3a8a; text-decoration: none; }
+    .feed-item a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>📰 Sports News Feed (Organized by Sport > Continent > Date)</h1>
+  <div class="container" id="feeds-container">
+    <!-- Content will be injected here -->
+  </div>
+
+  <script>
+    const feedSources = [
+      {
+        sport: "Football",
+        continent: "Europe",
+        url: "https://www.besport.news/rss-feed-latest-football-news.xml"
+      },
+      {
+        sport: "General",
+        continent: "North America",
+        url: "https://www.espn.com/espn/rss/news"
+      }
+    ];
+
+    async function fetchFeed(feedUrl) {
+      const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+      const data = await response.json();
+      return data.items;
+    }
+
+    async function loadFeeds() {
+      const container = document.getElementById('feeds-container');
+      for (const source of feedSources) {
+        const items = await fetchFeed(source.url);
+        const section = document.createElement('div');
+        section.className = 'section';
+        const today = new Date().toISOString().split('T')[0];
+
+        section.innerHTML = `
+          <h2>${source.sport} - ${source.continent}</h2>
+          <div>${items.filter(item => item.pubDate.startsWith(today)).map(item => `
+            <div class="feed-item">
+              <a href="${item.link}" target="_blank">${item.title}</a>
+              <div><small>${new Date(item.pubDate).toLocaleTimeString()}</small></div>
+            </div>
+          `).join('') || '<em>No new articles today.</em>'}</div>
+        `;
+
+        container.appendChild(section);
+      }
+    }
+
+    loadFeeds();
+  </script>
+</body>
+</html>
