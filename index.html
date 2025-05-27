@@ -8,53 +8,42 @@
     body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
     h1 { text-align: center; padding: 1rem; background: #1e3a8a; color: white; }
     .container { padding: 1rem; max-width: 1200px; margin: auto; }
-    .section { background: white; margin-bottom: 1rem; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .controls { text-align: center; margin-bottom: 1rem; }
+    select { padding: 0.5rem; font-size: 1rem; }
+    .grid { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .section { flex: 1 1 calc(50% - 1rem); background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     .section h2 { margin-top: 0; }
     .feed-item { margin-bottom: 0.5rem; }
     .feed-item a { color: #1e3a8a; text-decoration: none; }
     .feed-item a:hover { text-decoration: underline; }
     .error { color: red; font-style: italic; }
-    .loading { font-style: italic; color: #555; }
+    .loading { font-style: italic; color: #555; text-align: center; }
   </style>
 </head>
 <body>
-  <h1>📰 Sports News Feed (Organized by Sport > Continent > Date)</h1>
-  <div class="container" id="feeds-container">
-    <p class="loading">Loading feeds, please wait...</p>
+  <h1>📰 Sports News Feed</h1>
+  <div class="container">
+    <div class="controls">
+      <label for="continentSelect">🌍 Filter by Continent: </label>
+      <select id="continentSelect">
+        <option value="All">All</option>
+        <option value="Europe">Europe</option>
+        <option value="North America">North America</option>
+        <option value="Asia">Asia</option>
+        <option value="Global">Global</option>
+      </select>
+    </div>
+    <div id="feeds-container">
+      <p class="loading">Loading feeds, please wait...</p>
+    </div>
   </div>
 
   <script>
     const feedSources = [
-      {
-        sport: "Football",
-        continent: "Europe",
-        url: "https://www.besport.news/rss-feed-latest-football-news.xml"
-      },
-      {
-        sport: "General",
-        continent: "North America",
-        url: "https://www.espn.com/espn/rss/news"
-      },
-      {
-        sport: "Tennis",
-        continent: "Global",
-        url: "https://www.tennisworldusa.org/rss/news/"
-      },
-      {
-        sport: "Cricket",
-        continent: "Asia",
-        url: "https://www.espncricinfo.com/rss/content/story/feeds/0.xml"
-      },
-      {
-        sport: "Basketball",
-        continent: "North America",
-        url: "https://www.espn.com/espn/rss/nba/news"
-      },
-      {
-        sport: "Motorsport",
-        continent: "Europe",
-        url: "https://www.motorsport.com/rss/f1/news/"
-      }
+      { sport: "Soccer", continent: "Europe", url: "https://www.besport.news/rss-feed-latest-football-news.xml" },
+      { sport: "Basketball", continent: "North America", url: "https://www.espn.com/espn/rss/nba/news" },
+      { sport: "Motorsport", continent: "Europe", url: "https://www.motorsport.com/rss/f1/news/" },
+      { sport: "Hockey", continent: "North America", url: "https://www.nhl.com/rss/news" },
     ];
 
     async function fetchFeed(feedUrl) {
@@ -72,43 +61,65 @@
       }
     }
 
-    async function loadFeeds() {
+    function groupBySport(sources) {
+      const map = {};
+      for (const src of sources) {
+        if (!map[src.sport]) map[src.sport] = [];
+        map[src.sport].push(src);
+      }
+      return map;
+    }
+
+    async function loadFeeds(continentFilter = 'All') {
       const container = document.getElementById('feeds-container');
       container.innerHTML = '';
-      for (const source of feedSources) {
-        const section = document.createElement('div');
-        section.className = 'section';
 
-        const items = await fetchFeed(source.url);
-        const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      const grouped = groupBySport(feedSources);
 
-        if (!items) {
-          section.innerHTML = `
-            <h2>${source.sport} - ${source.continent}</h2>
-            <p class="error">⚠️ Could not load feed from ${source.url}</p>
-          `;
-        } else {
-          const todaysItems = items.filter(item => {
-            const dateStr = item.pubDate || item.published || '';
-            return dateStr.includes(today);
-          });
+      for (const [sport, feeds] of Object.entries(grouped)) {
+        const row = document.createElement('div');
+        row.className = 'grid';
 
-          section.innerHTML = `
-            <h2>${source.sport} - ${source.continent}</h2>
-            <div>
-              ${todaysItems.length > 0 ? todaysItems.map(item => `
-                <div class="feed-item">
-                  <a href="${item.link}" target="_blank">${item.title}</a>
-                  <div><small>${new Date(item.pubDate || item.published).toLocaleTimeString()}</small></div>
-                </div>
-              `).join('') : '<em>No new articles today.</em>'}
-            </div>
-          `;
+        for (const source of feeds) {
+          if (continentFilter !== 'All' && source.continent !== continentFilter) continue;
+
+          const section = document.createElement('div');
+          section.className = 'section';
+
+          const items = await fetchFeed(source.url);
+
+          if (!items) {
+            section.innerHTML = `
+              <h2>${sport} - ${source.continent}</h2>
+              <p class="error">⚠️ Could not load feed from ${source.url}</p>
+            `;
+          } else {
+            const todaysItems = items.filter(item => {
+              const dateStr = item.pubDate || item.published || '';
+              return dateStr.includes(today);
+            });
+
+            section.innerHTML = `
+              <h2>${sport} - ${source.continent}</h2>
+              <div>
+                ${todaysItems.length > 0 ? todaysItems.map(item => `
+                  <div class="feed-item">
+                    <a href="${item.link}" target="_blank">${item.title}</a>
+                  </div>
+                `).join('') : '<em>No new articles today.</em>'}
+              </div>
+            `;
+          }
+          row.appendChild(section);
         }
-
-        container.appendChild(section);
+        if (row.children.length > 0) container.appendChild(row);
       }
     }
+
+    document.getElementById('continentSelect').addEventListener('change', (e) => {
+      loadFeeds(e.target.value);
+    });
 
     loadFeeds();
   </script>
