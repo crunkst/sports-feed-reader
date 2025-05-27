@@ -9,7 +9,7 @@
     h1 { text-align: center; padding: 1rem; background: #1e3a8a; color: white; }
     .container { padding: 1rem; max-width: 960px; margin: auto; }
     .controls { text-align: center; margin-bottom: 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
-    select { padding: 0.5rem; font-size: 1rem; }
+    select, input[type="text"] { padding: 0.5rem; font-size: 1rem; }
     .grid { display: flex; flex-wrap: wrap; gap: 1rem; }
     .section { flex: 1 1 calc(50% - 1rem); background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     .section h2 { margin-top: 0; }
@@ -26,6 +26,7 @@
     <div class="controls">
       <label for="sportSelect">🏅 Sport: </label>
       <select id="sportSelect">
+
         <option value="Soccer">Soccer</option>
         <option value="Basketball">Basketball</option>
         <option value="Motorsport">Motorsport</option>
@@ -45,6 +46,7 @@
         <option value="today">Today</option>
         <option value="yesterday">Yesterday</option>
       </select>
+      <input type="text" id="searchInput" placeholder="🔍 Search keyword..." />
     </div>
     <div id="feeds-container">
       <p class="loading">Loading feeds, please wait...</p>
@@ -76,7 +78,7 @@
       return map;
     }
 
-    async function loadFeeds(sportFilter = 'All', continentFilter = 'All', dateFilter = 'today') {
+    async function loadFeeds(sportFilter = 'All', continentFilter = 'All', dateFilter = 'today', searchTerm = '') {
       const container = document.getElementById('feeds-container');
       container.innerHTML = '';
 
@@ -100,7 +102,9 @@
 
           const filteredItems = items.filter(item => {
             const pubDate = new Date(item.pubDate || item.published || '');
-            return pubDate.toISOString().startsWith(dateStr);
+            const matchesDate = pubDate.toISOString().startsWith(dateStr);
+            const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesDate && matchesSearch;
           });
 
           const section = document.createElement('div');
@@ -112,7 +116,7 @@
                 <div class="feed-item">
                   <a href="${item.link}" target="_blank">${item.title}</a>
                 </div>
-              `).join('') : '<em>No articles for selected date.</em>'}
+              `).join('') : '<em>No articles for selected date or keyword.</em>'}
             </div>
           `;
 
@@ -122,29 +126,22 @@
       }
     }
 
-    document.getElementById('sportSelect').addEventListener('change', () => {
+    function reloadFeeds() {
       const sport = document.getElementById('sportSelect').value;
       const continent = document.getElementById('continentSelect').value;
       const date = document.getElementById('dateSelect').value;
-      loadFeeds(sport, continent, date);
-    });
+      const search = document.getElementById('searchInput').value;
+      loadFeeds(sport, continent, date, search);
+    }
 
-    document.getElementById('continentSelect').addEventListener('change', () => {
-      const sport = document.getElementById('sportSelect').value;
-      const continent = document.getElementById('continentSelect').value;
-      const date = document.getElementById('dateSelect').value;
-      loadFeeds(sport, continent, date);
-    });
-
-    document.getElementById('dateSelect').addEventListener('change', () => {
-      const sport = document.getElementById('sportSelect').value;
-      const continent = document.getElementById('continentSelect').value;
-      const date = document.getElementById('dateSelect').value;
-      loadFeeds(sport, continent, date);
-    });
+    document.getElementById('sportSelect').addEventListener('change', reloadFeeds);
+    document.getElementById('continentSelect').addEventListener('change', reloadFeeds);
+    document.getElementById('dateSelect').addEventListener('change', reloadFeeds);
+    document.getElementById('searchInput').addEventListener('input', reloadFeeds);
 
     loadFeeds();
   </script>
 </body>
 </html>
+
 
