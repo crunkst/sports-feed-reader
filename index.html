@@ -30,7 +30,14 @@
         <option value="Europe">Europe</option>
         <option value="North America">North America</option>
         <option value="Asia">Asia</option>
-        <option value="Global">Global</option>
+        <option value="Africa">Africa</option>
+        <option value="South America">South America</option>
+        <option value="Oceania">Oceania</option>
+      </select>
+      <label for="dateSelect">📅 Date: </label>
+      <select id="dateSelect">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
       </select>
     </div>
     <div id="feeds-container">
@@ -40,10 +47,42 @@
 
   <script>
     const feedSources = [
-      { sport: "Soccer", continent: "Europe", url: "https://www.besport.news/rss-feed-latest-football-news.xml" },
+      { sport: "Soccer", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/football/rss.xml" },
+      { sport: "Soccer", continent: "Europe", url: "https://www.theguardian.com/football/rss" },
+      { sport: "Soccer", continent: "North America", url: "https://www.espn.com/espn/rss/soccer/news" },
+      { sport: "Soccer", continent: "North America", url: "https://www.foxsports.com/rss-feeds" },
+      { sport: "Soccer", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
+      { sport: "Soccer", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
+      { sport: "Soccer", continent: "Africa", url: "https://www.modernghana.com/rssfeed/sports.xml" },
+      { sport: "Soccer", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
+      { sport: "Soccer", continent: "Oceania", url: "https://footballoceania.com/feed/" },
+
+      { sport: "Basketball", continent: "Europe", url: "https://www.eurohoops.net/en/feed/" },
+      { sport: "Basketball", continent: "Europe", url: "https://www.euroleague.net/rss" },
       { sport: "Basketball", continent: "North America", url: "https://www.espn.com/espn/rss/nba/news" },
+      { sport: "Basketball", continent: "North America", url: "https://www.cbssports.com/rss/headlines/nba/" },
+      { sport: "Basketball", continent: "Asia", url: "https://www.scmp.com/rss/91/feed" },
+      { sport: "Basketball", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
+      { sport: "Basketball", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
+      { sport: "Basketball", continent: "Oceania", url: "https://www.abc.net.au/news/sport/basketball/rss" },
+
       { sport: "Motorsport", continent: "Europe", url: "https://www.motorsport.com/rss/f1/news/" },
+      { sport: "Motorsport", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/motorsport/rss.xml" },
+      { sport: "Motorsport", continent: "North America", url: "https://www.foxsports.com/rss-feeds" },
+      { sport: "Motorsport", continent: "North America", url: "https://www.espn.com/espn/rss/motorsports/news" },
+      { sport: "Motorsport", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
+      { sport: "Motorsport", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
+      { sport: "Motorsport", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
+      { sport: "Motorsport", continent: "Oceania", url: "https://www.abc.net.au/news/sport/motorsport/rss" },
+
+      { sport: "Hockey", continent: "Europe", url: "https://ehlhockey.tv/feed/" },
+      { sport: "Hockey", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/ice-hockey/rss.xml" },
       { sport: "Hockey", continent: "North America", url: "https://www.nhl.com/rss/news" },
+      { sport: "Hockey", continent: "North America", url: "https://www.espn.com/espn/rss/nhl/news" },
+      { sport: "Hockey", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
+      { sport: "Hockey", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
+      { sport: "Hockey", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
+      { sport: "Hockey", continent: "Oceania", url: "https://www.abc.net.au/news/sport/ice-hockey/rss" }
     ];
 
     async function fetchFeed(feedUrl) {
@@ -70,11 +109,14 @@
       return map;
     }
 
-    async function loadFeeds(continentFilter = 'All') {
+    async function loadFeeds(continentFilter = 'All', dateFilter = 'today') {
       const container = document.getElementById('feeds-container');
       container.innerHTML = '';
 
-      const today = new Date().toISOString().split('T')[0];
+      const targetDate = new Date();
+      if (dateFilter === 'yesterday') targetDate.setDate(targetDate.getDate() - 1);
+      const dateStr = targetDate.toISOString().split('T')[0];
+
       const grouped = groupBySport(feedSources);
 
       for (const [sport, feeds] of Object.entries(grouped)) {
@@ -95,19 +137,19 @@
               <p class="error">⚠️ Could not load feed from ${source.url}</p>
             `;
           } else {
-            const todaysItems = items.filter(item => {
-              const dateStr = item.pubDate || item.published || '';
-              return dateStr.includes(today);
+            const filteredItems = items.filter(item => {
+              const pubDate = new Date(item.pubDate || item.published || '');
+              return pubDate.toISOString().startsWith(dateStr);
             });
 
             section.innerHTML = `
               <h2>${sport} - ${source.continent}</h2>
               <div>
-                ${todaysItems.length > 0 ? todaysItems.map(item => `
+                ${filteredItems.length > 0 ? filteredItems.map(item => `
                   <div class="feed-item">
                     <a href="${item.link}" target="_blank">${item.title}</a>
                   </div>
-                `).join('') : '<em>No new articles today.</em>'}
+                `).join('') : '<em>No articles for selected date.</em>'}
               </div>
             `;
           }
@@ -117,8 +159,16 @@
       }
     }
 
-    document.getElementById('continentSelect').addEventListener('change', (e) => {
-      loadFeeds(e.target.value);
+    document.getElementById('continentSelect').addEventListener('change', () => {
+      const continent = document.getElementById('continentSelect').value;
+      const date = document.getElementById('dateSelect').value;
+      loadFeeds(continent, date);
+    });
+
+    document.getElementById('dateSelect').addEventListener('change', () => {
+      const continent = document.getElementById('continentSelect').value;
+      const date = document.getElementById('dateSelect').value;
+      loadFeeds(continent, date);
     });
 
     loadFeeds();
