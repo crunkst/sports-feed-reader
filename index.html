@@ -14,12 +14,13 @@
     .feed-item a { color: #1e3a8a; text-decoration: none; }
     .feed-item a:hover { text-decoration: underline; }
     .error { color: red; font-style: italic; }
+    .loading { font-style: italic; color: #555; }
   </style>
 </head>
 <body>
   <h1>📰 Sports News Feed (Organized by Sport > Continent > Date)</h1>
   <div class="container" id="feeds-container">
-    <!-- Content will be injected here -->
+    <p class="loading">Loading feeds, please wait...</p>
   </div>
 
   <script>
@@ -33,6 +34,26 @@
         sport: "General",
         continent: "North America",
         url: "https://www.espn.com/espn/rss/news"
+      },
+      {
+        sport: "Tennis",
+        continent: "Global",
+        url: "https://www.tennisworldusa.org/rss/news/"
+      },
+      {
+        sport: "Cricket",
+        continent: "Asia",
+        url: "https://www.espncricinfo.com/rss/content/story/feeds/0.xml"
+      },
+      {
+        sport: "Basketball",
+        continent: "North America",
+        url: "https://www.espn.com/espn/rss/nba/news"
+      },
+      {
+        sport: "Motorsport",
+        continent: "Europe",
+        url: "https://www.motorsport.com/rss/f1/news/"
       }
     ];
 
@@ -41,19 +62,19 @@
         const response = await fetch(`https://api.feednami.com/api/v1/feeds/load?url=${encodeURIComponent(feedUrl)}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        console.log('Fetched feed data:', data); // Debugging aid
-        if (!data.feed || !data.feed.entries) {
+        if (!data.feed || !Array.isArray(data.feed.entries)) {
           throw new Error('Feed format is unexpected or empty.');
         }
         return data.feed.entries;
       } catch (error) {
         console.error('Fetch error:', error);
-        return null; // Return null for error handling
+        return null;
       }
     }
 
     async function loadFeeds() {
       const container = document.getElementById('feeds-container');
+      container.innerHTML = '';
       for (const source of feedSources) {
         const section = document.createElement('div');
         section.className = 'section';
@@ -69,7 +90,7 @@
         } else {
           const todaysItems = items.filter(item => {
             const dateStr = item.pubDate || item.published || '';
-            return dateStr.startsWith(today);
+            return dateStr.includes(today);
           });
 
           section.innerHTML = `
