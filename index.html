@@ -13,6 +13,7 @@
     .feed-item { margin-bottom: 0.5rem; }
     .feed-item a { color: #1e3a8a; text-decoration: none; }
     .feed-item a:hover { text-decoration: underline; }
+    .error { color: red; font-style: italic; }
   </style>
 </head>
 <body>
@@ -36,28 +37,53 @@
     ];
 
     async function fetchFeed(feedUrl) {
-      const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-      const data = await response.json();
-      return data.items;
+      try {
+        const response = await fetch(`https://api.feednami.com/api/v1/feeds/load?url=${encodeURIComponent(feedUrl)}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        console.log('Fetched feed data:', data); // Debugging aid
+        if (!data.feed || !data.feed.entries) {
+          throw new Error('Feed format is unexpected or empty.');
+        }
+        return data.feed.entries;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        return null; // Return null for error handling
+      }
     }
 
     async function loadFeeds() {
       const container = document.getElementById('feeds-container');
       for (const source of feedSources) {
-        const items = await fetchFeed(source.url);
         const section = document.createElement('div');
         section.className = 'section';
+
+        const items = await fetchFeed(source.url);
         const today = new Date().toISOString().split('T')[0];
 
-        section.innerHTML = `
-          <h2>${source.sport} - ${source.continent}</h2>
-          <div>${items.filter(item => item.pubDate.startsWith(today)).map(item => `
-            <div class="feed-item">
-              <a href="${item.link}" target="_blank">${item.title}</a>
-              <div><small>${new Date(item.pubDate).toLocaleTimeString()}</small></div>
+        if (!items) {
+          section.innerHTML = `
+            <h2>${source.sport} - ${source.continent}</h2>
+            <p class="error">⚠️ Could not load feed from ${source.url}</p>
+          `;
+        } else {
+          const todaysItems = items.filter(item => {
+            const dateStr = item.pubDate || item.published || '';
+            return dateStr.startsWith(today);
+          });
+
+          section.innerHTML = `
+            <h2>${source.sport} - ${source.continent}</h2>
+            <div>
+              ${todaysItems.length > 0 ? todaysItems.map(item => `
+                <div class="feed-item">
+                  <a href="${item.link}" target="_blank">${item.title}</a>
+                  <div><small>${new Date(item.pubDate || item.published).toLocaleTimeString()}</small></div>
+                </div>
+              `).join('') : '<em>No new articles today.</em>'}
             </div>
-          `).join('') || '<em>No new articles today.</em>'}</div>
-        `;
+          `;
+        }
 
         container.appendChild(section);
       }
@@ -67,3 +93,4 @@
   </script>
 </body>
 </html>
+
