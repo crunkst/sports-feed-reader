@@ -7,8 +7,8 @@
   <style>
     body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
     h1 { text-align: center; padding: 1rem; background: #1e3a8a; color: white; }
-    .container { padding: 1rem; max-width: 1200px; margin: auto; }
-    .controls { text-align: center; margin-bottom: 1rem; }
+    .container { padding: 1rem; max-width: 960px; margin: auto; }
+    .controls { text-align: center; margin-bottom: 1rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
     select { padding: 0.5rem; font-size: 1rem; }
     .grid { display: flex; flex-wrap: wrap; gap: 1rem; }
     .section { flex: 1 1 calc(50% - 1rem); background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
@@ -24,7 +24,15 @@
   <h1>📰 Sports News Feed</h1>
   <div class="container">
     <div class="controls">
-      <label for="continentSelect">🌍 Filter by Continent: </label>
+      <label for="sportSelect">🏅 Sport: </label>
+      <select id="sportSelect">
+        <option value="All">All</option>
+        <option value="Soccer">Soccer</option>
+        <option value="Basketball">Basketball</option>
+        <option value="Motorsport">Motorsport</option>
+        <option value="Hockey">Hockey</option>
+      </select>
+      <label for="continentSelect">🌍 Region: </label>
       <select id="continentSelect">
         <option value="All">All</option>
         <option value="Europe">Europe</option>
@@ -46,56 +54,17 @@
   </div>
 
   <script>
-    const feedSources = [
-      { sport: "Soccer", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/football/rss.xml" },
-      { sport: "Soccer", continent: "Europe", url: "https://www.theguardian.com/football/rss" },
-      { sport: "Soccer", continent: "North America", url: "https://www.espn.com/espn/rss/soccer/news" },
-      { sport: "Soccer", continent: "North America", url: "https://www.foxsports.com/rss-feeds" },
-      { sport: "Soccer", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
-      { sport: "Soccer", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
-      { sport: "Soccer", continent: "Africa", url: "https://www.modernghana.com/rssfeed/sports.xml" },
-      { sport: "Soccer", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
-      { sport: "Soccer", continent: "Oceania", url: "https://footballoceania.com/feed/" },
-
-      { sport: "Basketball", continent: "Europe", url: "https://www.eurohoops.net/en/feed/" },
-      { sport: "Basketball", continent: "Europe", url: "https://www.euroleague.net/rss" },
-      { sport: "Basketball", continent: "North America", url: "https://www.espn.com/espn/rss/nba/news" },
-      { sport: "Basketball", continent: "North America", url: "https://www.cbssports.com/rss/headlines/nba/" },
-      { sport: "Basketball", continent: "Asia", url: "https://www.scmp.com/rss/91/feed" },
-      { sport: "Basketball", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
-      { sport: "Basketball", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
-      { sport: "Basketball", continent: "Oceania", url: "https://www.abc.net.au/news/sport/basketball/rss" },
-
-      { sport: "Motorsport", continent: "Europe", url: "https://www.motorsport.com/rss/f1/news/" },
-      { sport: "Motorsport", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/motorsport/rss.xml" },
-      { sport: "Motorsport", continent: "North America", url: "https://www.foxsports.com/rss-feeds" },
-      { sport: "Motorsport", continent: "North America", url: "https://www.espn.com/espn/rss/motorsports/news" },
-      { sport: "Motorsport", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
-      { sport: "Motorsport", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
-      { sport: "Motorsport", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
-      { sport: "Motorsport", continent: "Oceania", url: "https://www.abc.net.au/news/sport/motorsport/rss" },
-
-      { sport: "Hockey", continent: "Europe", url: "https://ehlhockey.tv/feed/" },
-      { sport: "Hockey", continent: "Europe", url: "https://feeds.bbci.co.uk/sport/ice-hockey/rss.xml" },
-      { sport: "Hockey", continent: "North America", url: "https://www.nhl.com/rss/news" },
-      { sport: "Hockey", continent: "North America", url: "https://www.espn.com/espn/rss/nhl/news" },
-      { sport: "Hockey", continent: "Asia", url: "https://timesofindia.indiatimes.com/rssfeeds/4719148.cms" },
-      { sport: "Hockey", continent: "Africa", url: "https://allafrica.com/tools/headlines/rdf/sports/headlines.rdf" },
-      { sport: "Hockey", continent: "South America", url: "https://latinvex.com/latinvex-rss/" },
-      { sport: "Hockey", continent: "Oceania", url: "https://www.abc.net.au/news/sport/ice-hockey/rss" }
-    ];
+    const feedSources = [...]; // keep as-is
 
     async function fetchFeed(feedUrl) {
       try {
         const response = await fetch(`https://api.feednami.com/api/v1/feeds/load?url=${encodeURIComponent(feedUrl)}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        if (!data.feed || !Array.isArray(data.feed.entries)) {
-          throw new Error('Feed format is unexpected or empty.');
-        }
+        if (!data.feed || !Array.isArray(data.feed.entries)) throw new Error('Invalid feed format.');
         return data.feed.entries;
       } catch (error) {
-        console.error('Fetch error:', error);
+        console.warn('Skipping broken feed:', feedUrl);
         return null;
       }
     }
@@ -109,7 +78,7 @@
       return map;
     }
 
-    async function loadFeeds(continentFilter = 'All', dateFilter = 'today') {
+    async function loadFeeds(sportFilter = 'All', continentFilter = 'All', dateFilter = 'today') {
       const container = document.getElementById('feeds-container');
       container.innerHTML = '';
 
@@ -120,55 +89,60 @@
       const grouped = groupBySport(feedSources);
 
       for (const [sport, feeds] of Object.entries(grouped)) {
+        if (sportFilter !== 'All' && sport !== sportFilter) continue;
+
         const row = document.createElement('div');
         row.className = 'grid';
 
         for (const source of feeds) {
           if (continentFilter !== 'All' && source.continent !== continentFilter) continue;
 
+          const items = await fetchFeed(source.url);
+          if (!items) continue;
+
+          const filteredItems = items.filter(item => {
+            const pubDate = new Date(item.pubDate || item.published || '');
+            return pubDate.toISOString().startsWith(dateStr);
+          });
+
           const section = document.createElement('div');
           section.className = 'section';
+          section.innerHTML = `
+            <h2>${sport} - ${source.continent}</h2>
+            <div>
+              ${filteredItems.length > 0 ? filteredItems.map(item => `
+                <div class="feed-item">
+                  <a href="${item.link}" target="_blank">${item.title}</a>
+                </div>
+              `).join('') : '<em>No articles for selected date.</em>'}
+            </div>
+          `;
 
-          const items = await fetchFeed(source.url);
-
-          if (!items) {
-            section.innerHTML = `
-              <h2>${sport} - ${source.continent}</h2>
-              <p class="error">⚠️ Could not load feed from ${source.url}</p>
-            `;
-          } else {
-            const filteredItems = items.filter(item => {
-              const pubDate = new Date(item.pubDate || item.published || '');
-              return pubDate.toISOString().startsWith(dateStr);
-            });
-
-            section.innerHTML = `
-              <h2>${sport} - ${source.continent}</h2>
-              <div>
-                ${filteredItems.length > 0 ? filteredItems.map(item => `
-                  <div class="feed-item">
-                    <a href="${item.link}" target="_blank">${item.title}</a>
-                  </div>
-                `).join('') : '<em>No articles for selected date.</em>'}
-              </div>
-            `;
-          }
           row.appendChild(section);
         }
         if (row.children.length > 0) container.appendChild(row);
       }
     }
 
-    document.getElementById('continentSelect').addEventListener('change', () => {
+    document.getElementById('sportSelect').addEventListener('change', () => {
+      const sport = document.getElementById('sportSelect').value;
       const continent = document.getElementById('continentSelect').value;
       const date = document.getElementById('dateSelect').value;
-      loadFeeds(continent, date);
+      loadFeeds(sport, continent, date);
+    });
+
+    document.getElementById('continentSelect').addEventListener('change', () => {
+      const sport = document.getElementById('sportSelect').value;
+      const continent = document.getElementById('continentSelect').value;
+      const date = document.getElementById('dateSelect').value;
+      loadFeeds(sport, continent, date);
     });
 
     document.getElementById('dateSelect').addEventListener('change', () => {
+      const sport = document.getElementById('sportSelect').value;
       const continent = document.getElementById('continentSelect').value;
       const date = document.getElementById('dateSelect').value;
-      loadFeeds(continent, date);
+      loadFeeds(sport, continent, date);
     });
 
     loadFeeds();
