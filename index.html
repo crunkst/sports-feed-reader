@@ -26,7 +26,6 @@
     <div class="controls">
       <label for="sportSelect">🏅 Sport: </label>
       <select id="sportSelect">
-
         <option value="Soccer">Soccer</option>
         <option value="Basketball">Basketball</option>
         <option value="Motorsport">Motorsport</option>
@@ -94,10 +93,16 @@
         const row = document.createElement('div');
         row.className = 'grid';
 
-        for (const source of feeds) {
-          if (continentFilter !== 'All' && source.continent !== continentFilter) continue;
+        const filteredSources = feeds.filter(source => continentFilter === 'All' || source.continent === continentFilter);
 
+        const feedPromises = filteredSources.map(async source => {
           const items = await fetchFeed(source.url);
+          return { source, items };
+        });
+
+        const feedResults = await Promise.all(feedPromises);
+
+        for (const { source, items } of feedResults) {
           if (!items) continue;
 
           const filteredItems = items.filter(item => {
@@ -122,6 +127,7 @@
 
           row.appendChild(section);
         }
+
         if (row.children.length > 0) container.appendChild(row);
       }
     }
@@ -143,5 +149,3 @@
   </script>
 </body>
 </html>
-
-
