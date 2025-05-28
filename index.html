@@ -51,9 +51,29 @@
       <p class="loading">Loading feeds, please wait...</p>
     </div>
   </div>
-
+  
   <script>
-    const feedSources = [...]; // keep as-is
+const feedSources = [
+  // Soccer
+  { sport: "Soccer", continent: "Europe", url: "https://www.skysports.com/rss/12040" },
+  { sport: "Soccer", continent: "Africa", url: "https://www.kingfut.com/feed/" },
+  { sport: "Soccer", continent: "Asia", url: "https://www.the-afc.com/en/rss" },
+  { sport: "Soccer", continent: "South America", url: "https://www.goal.com/feeds/en/news?fmt=rss" },
+  { sport: "Soccer", continent: "North America", url: "https://www.mlssoccer.com/news/rss.xml" },
+  { sport: "Soccer", continent: "Oceania", url: "https://www.ftbl.com.au/rss.xml" },
+
+  // Basketball
+  { sport: "Basketball", continent: "North America", url: "https://www.espn.com/espn/rss/nba/news" },
+  { sport: "Basketball", continent: "Europe", url: "https://www.eurohoops.net/en/feed/" },
+
+  // Motorsport
+  { sport: "Motorsport", continent: "Europe", url: "https://www.motorsport.com/rss/f1/news/" },
+  { sport: "Motorsport", continent: "Oceania", url: "https://www.speedcafe.com/feed/" },
+
+  // Hockey
+  { sport: "Hockey", continent: "North America", url: "https://www.nhl.com/rss/news" },
+  { sport: "Hockey", continent: "Europe", url: "https://www.iihf.com/en/news.rss" }
+];
 
     async function fetchFeed(feedUrl) {
       try {
